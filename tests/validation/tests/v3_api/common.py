@@ -936,8 +936,10 @@ def validate_cluster(client, cluster, intermediate_state="provisioning",
     validate_workload(p_client, workload, "daemonSet", ns.name,
                       len(get_schedulable_nodes(cluster, client)))
     if not skipIngresscheck:
+        print(f"------------>ingress checks running")
         pods = p_client.list_pod(workloadId=workload["id"]).data
         scale = len(pods)
+        time.sleep(8)
         # test service discovery
         validate_service_discovery(workload, scale, p_client, ns, pods)
         host = "test" + str(random_int(10000, 99999)) + ".com"
@@ -1002,10 +1004,13 @@ def validate_dns_entry(pod, host, expected, port=TEST_IMAGE_PORT):
         cmd = 'curl -vs {}:{} 2>&1'.format(host, port)
     else:
         cmd = 'ping -c 1 -W 1 {0}'.format(host)
+    print("---------->Now sleeping")
+    time.sleep(6)
     cmd_output = kubectl_pod_exec(pod, cmd)
-
+    print(f"ping cmd op--------------->{cmd_output}")
     connectivity_validation_pass = False
     for expected_value in expected:
+        print(f"ping cmd expected--------------->{expected_value}")
         if expected_value in str(cmd_output):
             connectivity_validation_pass = True
             break
@@ -1017,9 +1022,12 @@ def validate_dns_entry(pod, host, expected, port=TEST_IMAGE_PORT):
         assert " 0% packet loss" in str(cmd_output)
 
     dig_cmd = 'dig {0} +short'.format(host)
+    print("---------->Now sleeping")
+    time.sleep(6)
     dig_output = kubectl_pod_exec(pod, dig_cmd)
-
+    print(f"dig cmd op---------------->{dig_output}")
     for expected_value in expected:
+        print(f"dig expected value---------------->{expected_value}")
         assert expected_value in str(dig_output), \
             "Error the dig command returned: {0}".format(dig_output)
 
