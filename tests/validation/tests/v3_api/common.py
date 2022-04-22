@@ -873,11 +873,13 @@ def check_if_ok(url, verify=False, headers={}):
 
 def validate_http_response(cmd, target_name_list, client_pod=None,
                            insecure=False):
+    count = 0
     if client_pod is None and cmd.startswith("http://"):
         wait_until_active(cmd, 60)
     target_hit_list = target_name_list[:]
     while len(target_hit_list) != 0:
-        if len(target_hit_list) == 0:
+        count = count + 1
+        if len(target_hit_list) == 0 or count == 40:
             break
         if client_pod is None:
             curl_cmd = "curl " + cmd
