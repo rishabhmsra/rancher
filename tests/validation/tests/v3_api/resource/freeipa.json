@@ -1,6 +1,6 @@
 {
-  "admin_user": "testautoadmin",
-  "standard_user": "testautouser",
+  "admin_user": "testuser1",
+  "standard_user": "testuser1",
   "allowed_users": [
     "testauto2"
   ],

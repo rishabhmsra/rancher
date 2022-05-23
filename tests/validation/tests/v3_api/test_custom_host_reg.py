@@ -60,7 +60,7 @@ def test_deploy_rancher_server():
     RANCHER_SERVER_CMD += ":" + RANCHER_SERVER_VERSION + " --trace"
     print(RANCHER_SERVER_CMD)
     aws_nodes = AmazonWebServices().create_multiple_nodes(
-        1, random_test_name("testsa" + HOST_NAME))
+        1, random_test_name("rishabh-testsa" + HOST_NAME))
     aws_nodes[0].execute_command(RANCHER_SERVER_CMD)
     time.sleep(120)
     RANCHER_SERVER_URL = "https://" + aws_nodes[0].public_ip_address
@@ -73,16 +73,30 @@ def test_deploy_rancher_server():
 
     token = set_url_password_token(RANCHER_SERVER_URL,
                                    version=RANCHER_SERVER_VERSION)
-    admin_client = rancher.Client(url=RANCHER_SERVER_URL + "/v3",
-                                  token=token, verify=False)
+
+    t_end = time.time() + 30
+    while time.time() < t_end:
+        try:
+            admin_client = rancher.Client(url=RANCHER_SERVER_URL + "/v3",
+                                          token=token, verify=False)
+        except Exception:
+            print("Got exception while creating admin client - retry")
+        else:
+            break
+
+    #admin_client = rancher.Client(url=RANCHER_SERVER_URL + "/v3",
+    #                              token=token, verify=False)
+
     if AUTH_PROVIDER:
         enable_url = \
             RANCHER_SERVER_URL + "/v3/" + AUTH_PROVIDER + \
             "Configs/" + AUTH_PROVIDER.lower() + "?action=testAndApply"
+        print(f"RANCHER_SERVER_URL--------------------->{RANCHER_SERVER_URL}")
         auth_admin_user = load_setup_data()["admin_user"]
         auth_user_login_url = \
             RANCHER_SERVER_URL + "/v3-public/" + AUTH_PROVIDER + "Providers/" \
             + AUTH_PROVIDER.lower() + "?action=login"
+        print(f"auth_user_login_url------------------------->{auth_user_login_url}")
 
         if AUTH_PROVIDER == "activeDirectory":
 

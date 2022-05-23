@@ -1,5 +1,7 @@
 import json
 import os
+import time
+
 import pytest
 import requests
 
@@ -655,40 +657,62 @@ def enable_freeipa(username, token, enable_url=CATTLE_AUTH_ENABLE_URL,
                    password=PASSWORD, nested=False,
                    expected_status=200):
     headers = {'Authorization': 'Bearer ' + token}
-    r = requests.post(enable_url, json={
-        "ldapConfig": {
-            "accessMode": "unrestricted",
-            "certificate": FREEIPA_CA_CERTIFICATE,
-            "connectionTimeout": CONNECTION_TIMEOUT,
-            "groupDNAttribute": "entrydn",
-            "groupMemberMappingAttribute": "member",
-            "groupMemberUserAttribute": "entrydn",
-            "groupNameAttribute": "cn",
-            "groupObjectClass": "groupofnames",
-            "groupSearchAttribute": "cn",
-            "groupSearchBase": FREEIPA_GROUP_SEARCH_BASE,
-            "enabled": True,
-            "nestedGroupMembershipEnabled": nested,
-            "port": PORT,
-            "servers": [FREEIPA_HOSTNAME_OR_IP_ADDRESS],
-            "serviceAccountDistinguishedName": FREEIPA_SERVICE_ACCOUNT_NAME,
-            "tls": get_tls(FREEIPA_CA_CERTIFICATE),
-            "userDisabledBitMask": 0,
-            "userLoginAttribute": "uid",
-            "userMemberAttribute": "memberOf",
-            "userNameAttribute": "givenName",
-            "userObjectClass": "inetorgperson",
-            "userSearchAttribute": "uid|sn|givenName",
-            "userSearchBase": FREEIPA_USER_SEARCH_BASE,
-            "serviceAccountPassword": FREEIPA_SERVICE_ACCOUNT_PASSWORD
-        },
-        "username": username,
-        "password": password
-    }, verify=False, headers=headers)
+    print(f"FREEIPA_CA_CERTIFICATE--------->{FREEIPA_CA_CERTIFICATE}")
+    print(f"FREEIPA_GROUP_SEARCH_BASE--------->{FREEIPA_GROUP_SEARCH_BASE}")
+    print(f"nested--------->{nested}")
+    print(f"PORT--------->{PORT}")
+    print(f"FREEIPA_HOSTNAME_OR_IP_ADDRESS--------->{FREEIPA_HOSTNAME_OR_IP_ADDRESS}")
+    print(f"FREEIPA_SERVICE_ACCOUNT_NAME--------->{FREEIPA_SERVICE_ACCOUNT_NAME}")
+    print(f"FREEIPA_USER_SEARCH_BASE--------->{FREEIPA_USER_SEARCH_BASE}")
+    print(f"FREEIPA_SERVICE_ACCOUNT_PASSWORD--------->{FREEIPA_SERVICE_ACCOUNT_PASSWORD}")
+    print(f"username--------->{username}")
+    print(f"password--------->{password}")
 
-    print("Enable freeIpa request for " +
-          username + " " + str(expected_status))
-    assert r.status_code == expected_status
+    count = 0
+    while count != 5:
+        r = requests.post(enable_url, json={
+            "ldapConfig": {
+                "accessMode": "unrestricted",
+                "certificate": FREEIPA_CA_CERTIFICATE,
+                "connectionTimeout": CONNECTION_TIMEOUT,
+                "groupDNAttribute": "entrydn",
+                "groupMemberMappingAttribute": "member",
+                "groupMemberUserAttribute": "entrydn",
+                "groupNameAttribute": "cn",
+                "groupObjectClass": "groupofnames",
+                "groupSearchAttribute": "cn",
+                "groupSearchBase": FREEIPA_GROUP_SEARCH_BASE,
+                "enabled": True,
+                "nestedGroupMembershipEnabled": nested,
+                "port": PORT,
+                "servers": [FREEIPA_HOSTNAME_OR_IP_ADDRESS],
+                "serviceAccountDistinguishedName": FREEIPA_SERVICE_ACCOUNT_NAME,
+                "tls": get_tls(FREEIPA_CA_CERTIFICATE),
+                "userDisabledBitMask": 0,
+                "userLoginAttribute": "uid",
+                "userMemberAttribute": "memberOf",
+                "userNameAttribute": "givenName",
+                "userObjectClass": "inetorgperson",
+                "userSearchAttribute": "uid|sn|givenName",
+                "userSearchBase": FREEIPA_USER_SEARCH_BASE,
+                "serviceAccountPassword": FREEIPA_SERVICE_ACCOUNT_PASSWORD
+            },
+            "username": username,
+            "password": password
+        }, verify=False, headers=headers)
+
+        print("Enable freeIpa request for " +
+              username + " " + str(expected_status))
+        print(f"content------------->{r.content}")
+        if r.status_code == 200:
+            assert r.status_code == expected_status
+            break
+        else:
+            time.sleep(5)
+            count = count + 1
+            if count == 5:
+                assert r.status_code == expected_status
+            print(count)
 
 
 def disable_freeipa(username, token, expected_status=200):
