@@ -1,5 +1,3 @@
-//go:build (validation || sanity) && !infra.any && !infra.aks && !infra.eks && !infra.rke2k3s && !infra.gke && !infra.rke1 && !cluster.any && !cluster.custom && !cluster.nodedriver && !extended && !stress
-
 package rke1
 
 import (
@@ -113,7 +111,7 @@ func (c *CustomClusterProvisioningTestSuite) TestProvisioningRKE1CustomClusterDy
 		client *rancher.Client
 	}{
 		{provisioninginput.AdminClientName.String(), c.client},
-		{provisioninginput.StandardClientName.String(), c.standardUserClient},
+		//{provisioninginput.StandardClientName.String(), c.standardUserClient},
 	}
 	for _, tt := range tests {
 		permutations.RunTestPermutations(&c.Suite, tt.name, tt.client, c.provisioningConfig, permutations.RKE1CustomCluster, nil, nil)

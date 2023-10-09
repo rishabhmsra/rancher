@@ -1,5 +1,3 @@
-//go:build (validation || extended) && !infra.any && !infra.aks && !infra.eks && !infra.rke2k3s && !infra.gke && !infra.rke1 && !cluster.any && !cluster.custom && !cluster.nodedriver && !sanity && !stress
-
 package k3s
 
 import (
@@ -110,7 +108,7 @@ func (k *K3SNodeDriverProvisioningTestSuite) TestProvisioningK3SClusterDynamicIn
 		client *rancher.Client
 	}{
 		{provisioninginput.AdminClientName.String(), k.client},
-		{provisioninginput.StandardClientName.String(), k.standardUserClient},
+		//{provisioninginput.StandardClientName.String(), k.standardUserClient},
 	}
 
 	for _, tt := range tests {

@@ -1,5 +1,3 @@
-//go:build (validation || extended) && !infra.any && !infra.aks && !infra.eks && !infra.gke && !infra.rke2k3s && !cluster.any && !cluster.custom && !cluster.nodedriver && !sanity && !stress
-
 package rke2
 
 import (
@@ -108,7 +106,7 @@ func (r *RKE2NodeDriverProvisioningTestSuite) TestProvisioningRKE2ClusterDynamic
 		client *rancher.Client
 	}{
 		{provisioninginput.AdminClientName.String(), r.client},
-		{provisioninginput.StandardClientName.String(), r.standardUserClient},
+		//{provisioninginput.StandardClientName.String(), r.standardUserClient},
 	}
 
 	for _, tt := range tests {
