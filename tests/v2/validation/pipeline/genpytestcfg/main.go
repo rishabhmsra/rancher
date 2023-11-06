@@ -76,6 +76,7 @@ func main() {
 	content += "env.ADMIN_TOKEN='" + client.RancherConfig.AdminToken + "'\n"
 	content += "env.USER_TOKEN='" + userToken + "'\n"
 	content += "env.RANCHER_CLUSTER_NAMES='" + clusterNames + "'\n"
+	content += "env.PYTEST_OPTIONS='" + `-k "test_wl or test_connectivity or test_ingress or test_service_discovery or test_websocket"` + "'\n"
 
 	if userOwnerAccessErrClusters != "" {
 		content += "env.BUILD_STATE=unstable"
