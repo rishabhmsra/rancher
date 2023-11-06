@@ -6,7 +6,6 @@ import (
 
 	"github.com/rancher/rancher/tests/framework/clients/rancher"
 	management "github.com/rancher/rancher/tests/framework/clients/rancher/generated/management/v3"
-	"github.com/rancher/rancher/tests/framework/extensions/clusters"
 	"github.com/rancher/rancher/tests/framework/extensions/users"
 	"github.com/rancher/rancher/tests/framework/pkg/config"
 	"github.com/rancher/rancher/tests/framework/pkg/session"
@@ -34,7 +33,7 @@ func main() {
 		logrus.Fatalf("error generating steveclient: %s", err)
 	}
 
-	clustersList, err := client.Steve.SteveType(clusters.ProvisioningSteveResourceType).List(nil)
+	clustersList, err := client.Steve.SteveType("management.cattle.io.cluster").List(nil)
 	if err != nil {
 		logrus.Fatalf("error getting cluster list: %s", err)
 	}
