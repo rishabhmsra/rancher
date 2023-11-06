@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/rancher/rancher/tests/framework/clients/rancher"
 	management "github.com/rancher/rancher/tests/framework/clients/rancher/generated/management/v3"
@@ -117,7 +118,7 @@ func grantClusterOwnerAccessToUser(client *rancher.Client, clusterID string, use
 	}
 
 	_, err = client.Management.ClusterRoleTemplateBinding.Create(&management.ClusterRoleTemplateBinding{
-		Name:            "cluster-role-template-binding-1",
+		Name:            fmt.Sprintf("cluster-role-template-binding-%v", time.Now().Unix()),
 		ClusterID:       clusterID,
 		RoleTemplateID:  "cluster-owner",
 		UserPrincipalID: fmt.Sprintf("%s://%s", "local", userId),
