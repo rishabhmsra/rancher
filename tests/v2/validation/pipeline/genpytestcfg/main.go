@@ -69,7 +69,7 @@ func main() {
 	cattleTestURL := fmt.Sprintf("https://%s", client.RancherConfig.Host)
 
 	userToken := pytestConfig.UserToken
-	if pytestConfig.UserToken != "" {
+	if pytestConfig.UserToken == "" {
 		userToken = client.RancherConfig.AdminToken
 	}
 
