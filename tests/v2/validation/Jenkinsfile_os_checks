@@ -138,6 +138,7 @@ node {
                     jobs = [:]
                     cluster_arr = env.RANCHER_CLUSTER_NAMES.split(",")
                     cluster_count = cluster_arr.size()
+                    PYTEST_OPTIONS = '-k "test_wl or test_connectivity or test_ingress or test_service_discovery or test_websocket"'
                     if (!env.RANCHER_UPGRADE_CHECK || env.RANCHER_UPGRADE_CHECK == "") {
                         RANCHER_UPGRADE_CHECK = "preupgrade"
                     }
