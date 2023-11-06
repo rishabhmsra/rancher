@@ -34,20 +34,20 @@ func main() {
 		logrus.Fatalf("error generating steveclient: %s", err)
 	}
 
-	clustersList, err := client.Steve.SteveType("management.cattle.io.cluster").List(nil)
+	clustersList, err := client.Management.Cluster.List(nil)
 	if err != nil {
 		logrus.Fatalf("error getting cluster list: %s", err)
 	}
 
 	for _, cluster := range clustersList.Data {
 
-		if cluster.Name == "local" {
+		if cluster.AppliedSpec.DisplayName == "local" || cluster.AppliedSpec.DisplayName == "" {
 			continue
 		}
 
 		if pytestConfig.Username != "" {
 
-			logrus.Infof("granting cluster owner access on cluster:%s to user:%s", cluster.Name, pytestConfig.Username)
+			logrus.Infof("granting cluster owner access on cluster:%s to user:%s", cluster.AppliedSpec.DisplayName, pytestConfig.Username)
 			err := grantClusterOwnerAccessToUser(client, cluster.ID, pytestConfig.Username)
 			if err != nil {
 				logrus.Errorf("error granting cluster owner access to cluster: %s", err)
@@ -55,14 +55,14 @@ func main() {
 				if userOwnerAccessErrClusters != "" {
 					userOwnerAccessErrClusters += ","
 				}
-				userOwnerAccessErrClusters += cluster.Name
+				userOwnerAccessErrClusters += cluster.AppliedSpec.DisplayName
 			}
 		}
 
 		if clusterNames != "" {
 			clusterNames += ","
 		}
-		clusterNames += cluster.Name
+		clusterNames += cluster.AppliedSpec.DisplayName
 	}
 
 	content := ""
@@ -81,13 +81,6 @@ func main() {
 	if userOwnerAccessErrClusters != "" {
 		content += "env.BUILD_STATE=unstable"
 	}
-
-	wrkDir, err := os.Getwd()
-	if err != nil {
-		logrus.Errorf("error geting current working directory")
-	}
-
-	logrus.Infof("current working directory: %s", wrkDir)
 
 	file, err := os.Create(configFileName)
 	if err != nil {
