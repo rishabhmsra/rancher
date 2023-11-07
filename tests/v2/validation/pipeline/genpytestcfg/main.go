@@ -7,6 +7,7 @@ import (
 
 	"github.com/rancher/rancher/tests/framework/clients/rancher"
 	management "github.com/rancher/rancher/tests/framework/clients/rancher/generated/management/v3"
+	"github.com/rancher/rancher/tests/framework/extensions/clusters"
 	"github.com/rancher/rancher/tests/framework/extensions/users"
 	"github.com/rancher/rancher/tests/framework/pkg/config"
 	"github.com/rancher/rancher/tests/framework/pkg/session"
@@ -34,35 +35,38 @@ func main() {
 		logrus.Fatalf("error generating steveclient: %s", err)
 	}
 
-	clustersList, err := client.Management.Cluster.List(nil)
+	clustersList, err := client.Steve.SteveType(clusters.FleetSteveResourceType).List(nil)
 	if err != nil {
 		logrus.Fatalf("error getting cluster list: %s", err)
 	}
 
 	for _, cluster := range clustersList.Data {
 
-		if cluster.AppliedSpec.DisplayName == "local" || cluster.AppliedSpec.DisplayName == "" {
+		clusterName := cluster.Labels["management.cattle.io/cluster-display-name"]
+		clusterID := cluster.Labels["management.cattle.io/cluster-name"]
+
+		if clusterName == "local" {
 			continue
 		}
 
 		if pytestConfig.Username != "" {
 
-			logrus.Infof("granting cluster owner access on cluster:%s to user:%s", cluster.AppliedSpec.DisplayName, pytestConfig.Username)
-			err := grantClusterOwnerAccessToUser(client, cluster.ID, pytestConfig.Username)
+			logrus.Infof("granting cluster owner access on cluster:%s to user:%s", clusterName, pytestConfig.Username)
+			err := grantClusterOwnerAccessToUser(client, clusterID, pytestConfig.Username)
 			if err != nil {
 				logrus.Errorf("error granting cluster owner access to cluster: %s", err)
 
 				if userOwnerAccessErrClusters != "" {
 					userOwnerAccessErrClusters += ","
 				}
-				userOwnerAccessErrClusters += cluster.AppliedSpec.DisplayName
+				userOwnerAccessErrClusters += clusterName
 			}
 		}
 
 		if clusterNames != "" {
 			clusterNames += ","
 		}
-		clusterNames += cluster.AppliedSpec.DisplayName
+		clusterNames += clusterName
 	}
 
 	content := ""
@@ -93,7 +97,8 @@ func main() {
 		logrus.Errorf("falied to write to config file:  %s", err)
 	}
 
-	logrus.Infof("created config file")
+	logrus.Info("created config file")
+	logrus.Infof("conten\n: %v", content)
 
 	if userOwnerAccessErrClusters != "" {
 		logrus.Info("****************************************************")
