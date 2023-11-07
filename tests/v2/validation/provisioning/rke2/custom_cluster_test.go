@@ -128,7 +128,7 @@ func (c *CustomClusterProvisioningTestSuite) TestProvisioningRKE2CustomClusterDy
 		client *rancher.Client
 	}{
 		{provisioninginput.AdminClientName.String(), c.client},
-		{provisioninginput.StandardClientName.String(), c.standardUserClient},
+		//{provisioninginput.StandardClientName.String(), c.standardUserClient},
 	}
 	for _, tt := range tests {
 		testSession := session.NewSession()

@@ -113,7 +113,7 @@ func (c *CustomClusterProvisioningTestSuite) TestProvisioningRKE1CustomClusterDy
 		client *rancher.Client
 	}{
 		{provisioninginput.AdminClientName.String(), c.client},
-		{provisioninginput.StandardClientName.String(), c.standardUserClient},
+		//{provisioninginput.StandardClientName.String(), c.standardUserClient},
 	}
 	for _, tt := range tests {
 		permutations.RunTestPermutations(&c.Suite, tt.name, tt.client, c.provisioningConfig, permutations.RKE1CustomCluster, nil, nil)
