@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	nodeBaseName = "rancher-automation"
+	nodeBaseName = "os-testing1"
 )
 
 // CreateNodes creates `quantityPerPool[n]` number of ec2 instances
