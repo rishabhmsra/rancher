@@ -16,18 +16,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const pytestConfigKey = "pytest"
 const configFileName = "rancher_env.config"
-
-type PytestConfig struct {
-	Username  string `json:"username" yaml:"username"`
-	UserToken string `json:"userToken" yaml:"userToken"`
-}
 
 func main() {
 
-	pytestConfig := new(PytestConfig)
-	config.LoadConfig(pytestConfigKey, pytestConfig)
+	pytestConfig := new(namegenerator.PytestConfig)
+	config.LoadConfig(namegenerator.PytestConfigKey, pytestConfig)
 
 	clusterNames := ""
 	allAvailableClusterNames := ""
@@ -44,9 +38,7 @@ func main() {
 		logrus.Fatalf("error getting cluster list: %s", err)
 	}
 
-	jenkinsBuildNum := os.Getenv(namegenerator.JenkinsBuildNumKey)
-
-	logrus.Infof("jenkins build number is:%s", jenkinsBuildNum)
+	clusterNamePrefix := namegenerator.GetClusterNamePrefix()
 
 	for _, cluster := range clustersList.Data {
 
@@ -58,8 +50,8 @@ func main() {
 		}
 		allAvailableClusterNames += clusterName
 
-		if jenkinsBuildNum != "" && !strings.Contains(clusterName, jenkinsBuildNum) {
-			logrus.Infof("cluster name:%s does not contain jenkins build number:%s, skipping network checks...", clusterName, jenkinsBuildNum)
+		if !pytestConfig.RunOnAllClusters && !strings.HasPrefix(clusterName, clusterNamePrefix) {
+			logrus.Infof("cluster name:%s does not contain prefix:%s, skipping network checks...", clusterName, clusterNamePrefix)
 			continue
 		}
 

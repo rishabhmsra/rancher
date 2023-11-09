@@ -4,13 +4,24 @@ import (
 	"math/rand"
 	"os"
 	"time"
+
+	"github.com/rancher/rancher/tests/framework/pkg/config"
 )
 
 const lowerLetterBytes = "abcdefghijklmnopqrstuvwxyz"
 const upperLetterBytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const numberBytes = "0123456789"
 const defaultRandStringLength = 5
-const JenkinsBuildNumKey = "JENKINS_BUILD_NUMBER"
+const jenkinsBuildNumKey = "JENKINS_BUILD_NUMBER"
+
+const PytestConfigKey = "pytest"
+
+type PytestConfig struct {
+	Username          string `json:"username" yaml:"username"`
+	UserToken         string `json:"userToken" yaml:"userToken"`
+	ClusterNamePrefix string `json:"clusterNamePrefix" yaml:"clusterNamePrefix"`
+	RunOnAllClusters  bool   `json:"runOnAllClusters" yaml:"runOnAllClusters"`
+}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -43,10 +54,27 @@ func RandStringAll(length int) string {
 }
 
 func AppendRandomString(baseClusterName string) string {
-	jenkinsBuildNum := os.Getenv(JenkinsBuildNumKey)
-	if jenkinsBuildNum != "" {
-		return "auto-" + jenkinsBuildNum + "-" + baseClusterName + "-" + RandStringLower(defaultRandStringLength)
-	}
-	clusterName := "auto-" + baseClusterName + "-" + RandStringLower(defaultRandStringLength)
+
+	prefix := GetClusterNamePrefix()
+
+	clusterName := prefix + "-" + baseClusterName + "-" + RandStringLower(defaultRandStringLength)
 	return clusterName
+}
+
+func GetClusterNamePrefix() string {
+
+	pytestConfig := new(PytestConfig)
+	config.LoadConfig(PytestConfigKey, pytestConfig)
+
+	prefix := "auto"
+	jenkinsBuildNum := os.Getenv(jenkinsBuildNumKey)
+
+	if pytestConfig.ClusterNamePrefix == "" {
+		if jenkinsBuildNum != "" {
+			return prefix + "-" + jenkinsBuildNum
+		}
+		return prefix
+	}
+
+	return pytestConfig.ClusterNamePrefix + prefix
 }
