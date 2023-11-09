@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/rancher/rancher/tests/framework/clients/rancher"
@@ -10,6 +11,7 @@ import (
 	"github.com/rancher/rancher/tests/framework/extensions/clusters"
 	"github.com/rancher/rancher/tests/framework/extensions/users"
 	"github.com/rancher/rancher/tests/framework/pkg/config"
+	"github.com/rancher/rancher/tests/framework/pkg/namegenerator"
 	"github.com/rancher/rancher/tests/framework/pkg/session"
 	"github.com/sirupsen/logrus"
 )
@@ -28,6 +30,8 @@ func main() {
 	config.LoadConfig(pytestConfigKey, pytestConfig)
 
 	clusterNames := ""
+	allAvailableClusterNames := ""
+
 	userOwnerAccessErrClusters := ""
 
 	client, err := rancher.NewClient("", session.NewSession())
@@ -40,10 +44,19 @@ func main() {
 		logrus.Fatalf("error getting cluster list: %s", err)
 	}
 
+	jenkinsBuildNum := os.Getenv(namegenerator.JenkinsBuildNumKey)
+
+	logrus.Infof("jenkins build number is:%s", jenkinsBuildNum)
+
 	for _, cluster := range clustersList.Data {
 
 		clusterName := cluster.Labels["management.cattle.io/cluster-display-name"]
 		clusterID := cluster.Labels["management.cattle.io/cluster-name"]
+
+		if jenkinsBuildNum != "" && !strings.Contains(clusterName, jenkinsBuildNum) {
+			logrus.Infof("cluster name:%s does not contain jenkins build number:%s, skipping network checks...", clusterName, jenkinsBuildNum)
+			continue
+		}
 
 		if clusterName == "local" {
 			continue
@@ -67,6 +80,11 @@ func main() {
 			clusterNames += ","
 		}
 		clusterNames += clusterName
+
+		if allAvailableClusterNames != "" {
+			allAvailableClusterNames += ","
+		}
+		allAvailableClusterNames += clusterName
 	}
 
 	content := ""
@@ -97,6 +115,7 @@ func main() {
 		logrus.Errorf("falied to write to config file:  %s", err)
 	}
 
+	logrus.Infof("all available clusters on the instance: %s", allAvailableClusterNames)
 	logrus.Info("created config file")
 	logrus.Infof("conten\n: %v", content)
 

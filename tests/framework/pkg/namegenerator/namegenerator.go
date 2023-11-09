@@ -2,6 +2,7 @@ package namegenerator
 
 import (
 	"math/rand"
+	"os"
 	"time"
 )
 
@@ -9,6 +10,7 @@ const lowerLetterBytes = "abcdefghijklmnopqrstuvwxyz"
 const upperLetterBytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const numberBytes = "0123456789"
 const defaultRandStringLength = 5
+const JenkinsBuildNumKey = "JENKINS_BUILD_NUMBER"
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -41,6 +43,10 @@ func RandStringAll(length int) string {
 }
 
 func AppendRandomString(baseClusterName string) string {
+	jenkinsBuildNum := os.Getenv(JenkinsBuildNumKey)
+	if jenkinsBuildNum != "" {
+		return "auto-" + jenkinsBuildNum + "-" + baseClusterName + "-" + RandStringLower(defaultRandStringLength)
+	}
 	clusterName := "auto-" + baseClusterName + "-" + RandStringLower(defaultRandStringLength)
 	return clusterName
 }
