@@ -53,6 +53,11 @@ func main() {
 		clusterName := cluster.Labels["management.cattle.io/cluster-display-name"]
 		clusterID := cluster.Labels["management.cattle.io/cluster-name"]
 
+		if allAvailableClusterNames != "" {
+			allAvailableClusterNames += ","
+		}
+		allAvailableClusterNames += clusterName
+
 		if jenkinsBuildNum != "" && !strings.Contains(clusterName, jenkinsBuildNum) {
 			logrus.Infof("cluster name:%s does not contain jenkins build number:%s, skipping network checks...", clusterName, jenkinsBuildNum)
 			continue
@@ -80,11 +85,6 @@ func main() {
 			clusterNames += ","
 		}
 		clusterNames += clusterName
-
-		if allAvailableClusterNames != "" {
-			allAvailableClusterNames += ","
-		}
-		allAvailableClusterNames += clusterName
 	}
 
 	content := ""
