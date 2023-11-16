@@ -9,6 +9,7 @@ k8s_rancher_version = str(os.environ.get("RANCHER_K8S_VERSION").split("-")[0][1:
 k8s_rancher_version = version.parse(k8s_rancher_version)
 k8s_rancher_version = version.parse(f"{str(k8s_rancher_version.major)}.{str(k8s_rancher_version.minor)}")
 k8s_fixed_version = version.parse("1.21")
+k8s_version_with_distroless_etcd = version.parse("1.27")
 
 # Global expectedimagesdict declared to store the images for a specific
 # k8s Version
@@ -145,15 +146,22 @@ def wait_for_etcd_cluster_health(node, etcd_private_ip=False):
                  ' $ETCDCTL_CERT --key-file '
                  ' $ETCDCTL_KEY cluster-health'
         )
-    else:
+    elif k8s_rancher_version < k8s_version_with_distroless_etcd:
         etcd_tls_cmd = (
             'ETCDCTL_API=3 etcdctl endpoint health --cluster'
+        )
+    else:
+        etcd_tls_cmd = (
+            'etcdctl endpoint health --cluster'
         )
 
     print(etcd_tls_cmd)
     start_time = time.time()
     while start_time - time.time() < 120:
-        result = node.docker_exec('etcd', "sh -c '" + etcd_tls_cmd + "'")
+        if k8s_rancher_version < k8s_version_with_distroless_etcd:
+            result = node.docker_exec('etcd', "sh -c '" + etcd_tls_cmd + "'")
+        else:
+            result = node.docker_exec('etcd', etcd_tls_cmd)
         print("**RESULT**")
         print(result)
         if k8s_rancher_version <= k8s_fixed_version:
