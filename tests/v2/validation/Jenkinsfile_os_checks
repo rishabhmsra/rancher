@@ -8,6 +8,7 @@ node {
       job_name = job_names[job_names.size() - 1] 
     }
     def testContainer = "${job_name}${env.BUILD_NUMBER}_test"
+    def configGeneratorContainer = "${job_name}${env.BUILD_NUMBER}_configgen_test"
     def genCfgContainer = "${job_name}${env.BUILD_NUMBER}_config_test"
     def imageName = "rancher-validation-${job_name}${env.BUILD_NUMBER}"
     def testsDir = "github.com/rancher/rancher/tests/v2/validation/${env.TEST_PACKAGE}"
@@ -15,6 +16,8 @@ node {
     def envFile = ".env"
     def rancherConfig = "rancher_env.config"
     def branch = "release/v2.8"
+    def configsDir = "cattle-configs"
+    def configFiles = []
     if ("${env.BRANCH}" != "null" && "${env.BRANCH}" != "") {
       branch = "${env.BRANCH}"
     }
@@ -112,10 +115,56 @@ node {
                 sh "./tests/v2/validation/configure.sh"
                 sh "./tests/v2/validation/build.sh"
               }
+              stage('Generate Configuration files') {
+                try {
+                  sh "docker run --name ${configGeneratorContainer} -t -e CATTLE_TEST_CONFIG=\$CATTLE_TEST_CONFIG " +
+                    "${imageName} sh -c \"${workPath}pipeline/genamiconfigs/build.sh\""
+                  
+                  sh "docker cp ${configGeneratorContainer}:${rootPath}${configsDir}/ ."
+
+                  def configs = sh(script: "ls -1 ./${configsDir}", returnStdout: true).split()
+
+                  for (int i = 0; i < configs.size(); i++) {
+                      def configName = configs[i]
+                      echo "pushing ${configName} to the global variable"
+                      configFiles << "${configName}"
+                  }
+
+                  println "Building the image again with the config files"
+                  sh "./tests/v2/validation/configure.sh"
+                  sh "./tests/v2/validation/build.sh"
+                }
+              }
               stage('Run Validation Tests') {
                 try {
-                  sh "docker run --name ${testContainer} -t --env-file ${envFile} -e JENKINS_BUILD_NUMBER=${env.BUILD_NUMBER} " +
-                  "${imageName} sh -c \"/root/go/bin/gotestsum --format standard-verbose --packages=${testsDir} --junitfile ${testResultsOut} -- -tags=${TAGS} ${GOTEST_TESTCASE} -timeout=${timeout} -v\""
+
+                  configFiles.each {
+                    def configPath = "./${configsDir}/$it"
+                    def absoluteConfigPath = "${rootPath}${configsDir}/$it"
+
+                    def containerName = "${testContainer}_$it-provisioning"
+                    def containerTestResultsOut = "$it_${testResultsOut}"
+
+                    println "Running tests for ${absoluteConfigPath}"
+
+                    stage {
+                      try {
+                         sh "docker run --name ${containerName} -t --env-file ${envFile} -e JENKINS_BUILD_NUMBER=${env.BUILD_NUMBER} -e CATTLE_TEST_CONFIG=\"${absoluteConfigPath}\" +
+                        "${imageName} sh -c \"/root/go/bin/gotestsum --format standard-verbose --packages=${testsDir} --junitfile ${containerTestResultsOut} -- -tags=${TAGS} ${GOTEST_TESTCASE} -timeout=${timeout} -v\""
+
+                        sh "docker cp ${containerName}:${rootPath}${containerTestResultsOut} ."
+                        step([$class: 'JUnitResultArchiver', testResults: "**/${containerTestResultsOut}"])
+                        sh "docker stop ${containerName}"
+                        sh "docker rm -v ${containerName}"
+                      } catch (err) {
+                          echo 'Test run had failures. Collecting results...'
+                          sh "docker cp ${containerName}:${rootPath}${containerTestResultsOut} ."
+                          sh "docker stop ${containerName}"
+                          sh "docker rm -v ${containerName}"
+                        }
+                      }
+                    }
+                  }
                 } catch(err) {
                   echo 'Test run had failures. Collecting results...'
                 }
@@ -169,10 +218,6 @@ node {
                 }
               }
               stage('Test Report') {
-                sh "docker cp ${testContainer}:${rootPath}${testResultsOut} ."
-                step([$class: 'JUnitResultArchiver', testResults: "**/${testResultsOut}"])
-                sh "docker stop ${testContainer}"
-                sh "docker rm -v ${testContainer}"
                 sh "docker stop ${genCfgContainer}"
                 sh "docker rm -v ${genCfgContainer}"
                 sh "docker rmi -f ${imageName}"
