@@ -118,9 +118,9 @@ node {
               stage('Generate Configuration files') {
                 try {
                   sh "docker run --name ${configGeneratorContainer} -t -e CATTLE_TEST_CONFIG=\$CATTLE_TEST_CONFIG " +
-                    "${imageName} sh -c \"${workPath}pipeline/genamiconfigs/build.sh\""
+                    "${imageName} sh -c \"${rootPath}pipeline/genamiconfigs/build.sh\""
                   
-                  sh "docker cp ${configGeneratorContainer}:${rootPath}${configsDir}/ ."
+                  sh "docker cp ${configGeneratorContainer}:${rancherRootDir}/${configsDir}/ ."
 
                   def configs = sh(script: "ls -1 ./${configsDir}", returnStdout: true).split()
 
@@ -130,43 +130,39 @@ node {
                       configFiles << "${configName}"
                   }
 
-                  println "Building the image again with the config files"
+                  println "Building the image again with the config files, $configFiles"
                   sh "./tests/v2/validation/configure.sh"
                   sh "./tests/v2/validation/build.sh"
+                } catch(err) {
+                  error 'Error generating config files based on cattle-config. Collecting results...'
                 }
               }
               stage('Run Validation Tests') {
                 try {
+                  println "available config files: $configFiles"
+                  
+                  configFiles.each {  configFile ->
+                    
+                    def absoluteConfigPath = "${rancherRootDir}/${configsDir}/${configFile}"
 
-                  configFiles.each {
-                    def configPath = "./${configsDir}/$it"
-                    def absoluteConfigPath = "${rootPath}${configsDir}/$it"
 
-                    def containerName = "${testContainer}_$it-provisioning"
-                    def containerTestResultsOut = "$it_${testResultsOut}"
+                    def containerName = "${testContainer}_${configFile}-provisioning"
+                    def containerTestResultsOut = "${configFile}_${testResultsOut}"
+                    
+                    println "absolute config path: $absoluteConfigPath and container name: $containerName"
 
                     println "Running tests for ${absoluteConfigPath}"
 
-                    stage {
-                      try {
-                         sh "docker run --name ${containerName} -t --env-file ${envFile} -e JENKINS_BUILD_NUMBER=${env.BUILD_NUMBER} -e CATTLE_TEST_CONFIG=\"${absoluteConfigPath}\"" +
-                        "${imageName} sh -c \"/root/go/bin/gotestsum --format standard-verbose --packages=${testsDir} --junitfile ${containerTestResultsOut} -- -tags=${TAGS} ${GOTEST_TESTCASE} -timeout=${timeout} -v\""
+                    sh "docker run --name ${containerName} -t --env-file ${envFile} -e JENKINS_BUILD_NUMBER=${env.BUILD_NUMBER} -e CATTLE_TEST_CONFIG=\"${absoluteConfigPath}\"" +
+                    " ${imageName} sh -c \"/root/go/bin/gotestsum --format standard-verbose --packages=${testsDir} --junitfile ${containerTestResultsOut} -- -tags=${TAGS} ${GOTEST_TESTCASE} -timeout=${timeout} -v\""
 
-                        sh "docker cp ${containerName}:${rootPath}${containerTestResultsOut} ."
-                        step([$class: 'JUnitResultArchiver', testResults: "**/${containerTestResultsOut}"])
-                        sh "docker stop ${containerName}"
-                        sh "docker rm -v ${containerName}"
-                      } catch (err) {
-                          echo 'Test run had failures. Collecting results...'
-                          sh "docker cp ${containerName}:${rootPath}${containerTestResultsOut} ."
-                          sh "docker stop ${containerName}"
-                          sh "docker rm -v ${containerName}"
-                        }
-                      }
-                    }
+                    sh "docker cp ${containerName}:${rootPath}${containerTestResultsOut} ."
+                    step([$class: 'JUnitResultArchiver', testResults: "**/${containerTestResultsOut}"])
+                    sh "docker stop ${containerName}"
+                    sh "docker rm -v ${containerName}"
                   }
                 } catch(err) {
-                  echo 'Test run had failures. Collecting results...'
+                  error 'Test run had failures. Collecting results...'
                 }
               }
               stage('Generate Config File') {
