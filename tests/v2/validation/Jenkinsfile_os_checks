@@ -149,7 +149,7 @@ node {
 
                     stage {
                       try {
-                         sh "docker run --name ${containerName} -t --env-file ${envFile} -e JENKINS_BUILD_NUMBER=${env.BUILD_NUMBER} -e CATTLE_TEST_CONFIG=\"${absoluteConfigPath}\" +
+                         sh "docker run --name ${containerName} -t --env-file ${envFile} -e JENKINS_BUILD_NUMBER=${env.BUILD_NUMBER} -e CATTLE_TEST_CONFIG=\"${absoluteConfigPath}\"" +
                         "${imageName} sh -c \"/root/go/bin/gotestsum --format standard-verbose --packages=${testsDir} --junitfile ${containerTestResultsOut} -- -tags=${TAGS} ${GOTEST_TESTCASE} -timeout=${timeout} -v\""
 
                         sh "docker cp ${containerName}:${rootPath}${containerTestResultsOut} ."
