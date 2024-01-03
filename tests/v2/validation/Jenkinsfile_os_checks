@@ -162,7 +162,8 @@ node {
                     sh "docker rm -v ${containerName}"
                   }
                 } catch(err) {
-                  error 'Test run had failures. Collecting results...'
+                  echo 'Test run had failures. Collecting results...'
+                  currentBuild.result = 'UNSTABLE'
                 }
               }
               stage('Generate Config File') {
@@ -176,6 +177,7 @@ node {
                   load rancherConfig
                 } catch(err) {
                   echo 'error generating config file to trigger pytest job... Collecting results...'
+                  currentBuild.result = 'UNSTABLE'
                 }
               }
               stage('Run Validation Tests in Parallel') {
