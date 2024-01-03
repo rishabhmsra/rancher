@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/rancher/rancher/tests/framework/clients/ec2"
 	"github.com/rancher/rancher/tests/framework/extensions/machinepools"
 	"github.com/rancher/rancher/tests/framework/extensions/rke1/nodetemplates"
 	"github.com/rancher/rancher/tests/framework/pkg/config"
@@ -94,6 +95,14 @@ func main() {
 		config.LoadAndUpdateConfig(machinepools.AWSMachineConfigConfigurationFileKey, machineConfig, func() {
 			machineConfig.AMI = amiInfo.Id
 			machineConfig.SSHUser = amiInfo.SshUser
+		})
+
+		ec2Configs := new(ec2.AWSEC2Configs)
+		config.LoadAndUpdateConfig(ec2.ConfigurationFileKey, ec2Configs, func() {
+			for i := range ec2Configs.AWSEC2Config {
+				ec2Configs.AWSEC2Config[i].AWSAMI = amiInfo.Id
+				ec2Configs.AWSEC2Config[i].AWSUser = amiInfo.SshUser
+			}
 		})
 	}
 }
