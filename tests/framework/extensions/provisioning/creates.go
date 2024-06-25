@@ -419,7 +419,7 @@ func CreateProvisioningRKE1CustomCluster(client *rancher.Client, externalNodePro
 			command = createRKE1RegistrationCommand(command, node.PublicIPAddress, node.PrivateIPAddress, clustersConfig.NodePools[poolIndex])
 			logrus.Infof("Command: %s", command)
 
-			output, err := node.ExecuteCommand("curl https://releases.rancher.com/install-docker/24.0.sh | sh")
+			output, err := node.ExecuteCommand("curl https://releases.rancher.com/install-docker/26.1.sh | sh")
 			if err != nil {
 				return nil, nil, err
 			}
